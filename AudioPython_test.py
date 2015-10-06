@@ -7,15 +7,17 @@ from PyQt5 import QtCore
 from PyQt5 import QtWidgets
 from PyQt5 import QtGui
 
-class Plom(QtCore.QObject):
+THRESHOLD = 5e8
+
+class Klong(QtCore.QObject):
     
     toc = QtCore.pyqtSignal()
     t = 0
     
-    def __init__(self,mw):
+    def __init__(self,mw,threshold):
         super(QtCore.QObject, self).__init__()
         self.mw = mw
-        self.music_proc = MusicProcessor()
+        self.music_proc = MusicProcessor(threshold)
         self.music_proc.toc.connect(self.handle_toc)
         self.music_proc.start()
     
@@ -32,13 +34,14 @@ class MusicProcessor(QtCore.QObject):
     
     drum = 0
     toc = QtCore.pyqtSignal()
-    
-    def __init__(self):
+
+    def __init__(self, threshold):
         super(QtCore.QObject, self).__init__()
+        self.threshold = threshold
     
     def process_data(self, in_data, frame_count, time_info, flag):
         audio_data = np.fromstring(in_data, dtype=np.int32)
-        if max(np.diff(np.diff(np.diff((audio_data))))) > 1e9:
+        if max(np.diff(np.diff(np.diff((audio_data))))) > self.threshold:
             if self.drum == 0:
                 self.toc.emit()
                 self.drum = 1
@@ -66,5 +69,5 @@ if __name__ == "__main__":
     mw = QtWidgets.QMainWindow()
     mw.resize(500,500)
     mw.show()
-    p = Plom(mw)
+    k = Klong(mw, THRESHOLD)
     sys.exit(app.exec_())
